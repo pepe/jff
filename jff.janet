@@ -24,9 +24,11 @@
 
 (defn main [_ &opt prompt prefix]
   (default prompt "")
+  (default prefix "")
   (def d (->> (:read stdin :all)
               (string/split "\n")
-              #(map |(string/slice $ (length prefix) -1))
+              (filter |(not (empty? $)))
+              (map |[(string/slice $ (length prefix) -1) 0])
               ))
   (assert d)
   (var res "")
@@ -42,8 +44,9 @@
 
     (to-cells prompt 0 rows)
     (for i 0 (length d)
-      (to-cells (get sd i) 0 (- (- rows i) 2)
+      (to-cells (get-in sd [i 0]) 0 (- (- rows i) 2)
                 (when (= pos i) :inv)))
+    (to-cells (string/format "%d/%d" (length d) (length sd)) 0 (dec rows))
     (tb/present)
 
     (while (tb/poll-event e)
@@ -52,12 +55,13 @@
       (def k (tb/event-key e))
       (if (zero? c)
         (case k
-              16 (and (> (dec (length sd)) pos) (++ pos))
-              14 (and (pos? pos) (-- pos))
-              127 (buffer/popn s 1)
-              13 (do
-                   (set res (or (get-in sd [pos 0]) s))
-                   (break)))
+              tb/key-ctrl-n (and (> (dec (length sd)) pos) (++ pos))
+              tb/key-ctrl-p (and (pos? pos) (-- pos))
+              tb/key-backspace (buffer/popn s 1)
+              tb/key-enter
+              (do
+                (set res (string prefix (or (get-in sd [pos 0]) s)))
+                (break)))
         (if (< c 255)
          (buffer/push-byte s c)
          (error "Do not know UTF-8")))
@@ -65,7 +69,7 @@
       (def cg (mg (string s)))
       (set sd
         (as->
-         (map (fn [item] [item (first (peg/match cg item))]) d) r
+         (map (fn [[item _]] [item (first (peg/match cg item))]) d) r
          (filter |(number? (last $)) r)
          (sort r (fn [a b] (< (last b) (last a))))))
       (to-cells (string/format "%d/%d" (length d) (length sd)) 0 (dec rows))
