@@ -1,30 +1,39 @@
 (import termbox :as tb)
 
-(defn to-cells [msg &opt col row fg bg]
+(defn to-cells [msg &opt col row style]
   (default col 0)
   (default row 0)
-  (default fg tb/black)
-  (default bg tb/white)
+  (def fg (if style tb/black tb/white))
+  (def bg (if style tb/white tb/black))
   (for c 0 (length msg)
     (tb/cell (+ col c) row (msg c) fg bg)))
 
+(defn mg [b]
+  (peg/compile
+   {:exact ~(some ,b)
+    :in ~(* (some (if-not ,b 1)) :exact)
+    :fuzzy (tuple
+             '*
+             ;(seq [i :in b
+                    :let [c (string/from-bytes i)]]
+               ~(* (any (if-not ,c 1)) ,c)))
+    :main ~(+
+             (if :exact (constant 3))
+             (if :in (constant 2))
+             (if :fuzzy (constant 1)))}))
 
-(defn g [buf]
-  (def b (if (empty? buf) 1 buf))
-  {:exact ~(some ,b)
-   :in ~(* (some (if-not ,b 1)) :exact)
-   :main ~(+
-           (if :exact (constant 10))
-           (if :in (constant 2)))})
-
-(defn main [_ args]
-  (def d (string/split "\n" (:read stdin :all)))
+(defn main [_ &opt prompt prefix]
+  (default prompt "")
+  (def d (->> (:read stdin :all)
+              (string/split "\n")
+              #(map |(string/slice $ (length prefix) -1))
+              ))
+  (assert d)
   (var res "")
   (defer (tb/shutdown)
     (var sd d)
     (tb/init)
-    (def prompt args)
-    (var s @"")
+    (def s @"")
     (def cols (tb/width))
     (def rows (dec (tb/height)))
     (def e (tb/event))
@@ -34,7 +43,7 @@
     (to-cells prompt 0 rows)
     (for i 0 (length d)
       (to-cells (get sd i) 0 (- (- rows i) 2)
-                (if (= pos i) tb/black tb/white) (if (= pos i) tb/white tb/black)))
+                (when (= pos i) :inv)))
     (tb/present)
 
     (while (tb/poll-event e)
@@ -51,19 +60,19 @@
                    (break)))
         (if (< c 255)
          (buffer/push-byte s c)
-         (error "Do not know UTF-8 still")))
+         (error "Do not know UTF-8")))
       (to-cells (string prompt s) 0 rows)
-      (def cg (g (string s)))
+      (def cg (mg (string s)))
       (set sd
         (as->
          (map (fn [item] [item (first (peg/match cg item))]) d) r
          (filter |(number? (last $)) r)
          (sort r (fn [a b] (< (last b) (last a))))))
-      (to-cells (string k) 0 (dec rows))
+      (to-cells (string/format "%d/%d" (length d) (length sd)) 0 (dec rows))
+      #(to-cells (string k) 0 (dec rows))
       (for i 0 (min (length sd) rows)
         (to-cells (first (get sd i)) 0 (- (- rows i) 2)
-                  (if (= pos i) tb/black tb/white) (if (= pos i) tb/white tb/black)))
+                  (when (= pos i) :inv)))
       (tb/present)
       (+= i 1)))
   (print res))
-
