@@ -1,10 +1,12 @@
 (import termbox :as tb)
+(import utf8)
 
-(defn to-cells [msg &opt col row style]
+(defn to-cells [message &opt col row style]
   (default col 0)
   (default row 0)
   (def fg (if style tb/black tb/white))
   (def bg (if style tb/white tb/black))
+  (def msg (utf8/decode message))
 
   (for c 0 (length msg)
     (tb/cell (+ col c) row (msg c) fg bg)))
@@ -34,7 +36,9 @@
   (as->
     (map (fn [[item _]] [item (first (peg/match cg item))]) d) r
     (filter |(number? (last $)) r)
-    (sort r (fn [a b] (< (last b) (last a))))))
+    (sort r (fn [a b] (if (= (last a) (last b))
+                        (< (length (first a)) (length (first b)))
+                        (< (last b) (last a)))))))
 
 (defn main [_ &opt prompt prefix]
   (default prompt "")
@@ -63,23 +67,27 @@
       (while (tb/poll-event e)
         (let [c (tb/event-char e)
               k (tb/event-key e)]
-          (to-cells (string k) 16 1)
           (if (zero? c)
             (case k
                   tb/key-ctrl-n (and (> (dec (length sd)) pos) (++ pos))
                   tb/key-ctrl-p (and (pos? pos) (-- pos))
+                  tb/key-space (do
+                                (buffer/push-string s " ")
+                                (set sd (match-n-sort d s)))
                   tb/key-backspace2
-                  (do (buffer/popn s 1)
+                  (do (buffer/popn s (cond
+                                       (> (last s) 0x7F) 2
+                                       (> (last s) 0xC0) 3
+                                       (> (last s) 0xE0) 4
+                                       1))
                       (set sd (match-n-sort d s)))
                   tb/key-enter
                   (do
                     (set res (string prefix (or (get-in sd [pos 0]) s)))
                     (break)))
-            (if (< c 255)
-             (do
-              (buffer/push-byte s c)
-              (set sd (match-n-sort d s)))
-             (error "Do not know UTF-8"))))
+            (do
+              (buffer/push-string s (utf8/encode [c]))
+              (set sd (match-n-sort d s)))))
 
 
         (tb/clear)
