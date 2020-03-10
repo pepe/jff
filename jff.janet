@@ -5,7 +5,7 @@
   (default col 0)
   (default row 0)
   (def fg (if style tb/black tb/white))
-  (def bg (if style tb/white tb/black))
+  (def bg (if style tb/green tb/black))
   (def msg (utf8/decode message))
 
   (for c 0 (length msg)
@@ -49,12 +49,12 @@
 
   (defer (tb/shutdown)
     (tb/init)
-    (let [s @""
-          cols (tb/width)
+    (let [cols (tb/width)
           rows (dec (tb/height))
           e (tb/event)]
 
       (var pos 0)
+      (var s @"")
 
       (tb/clear)
       (to-cells prompt 0 0)
@@ -70,16 +70,23 @@
           (if (zero? c)
             (case k
                   tb/key-ctrl-n (and (> (dec (length sd)) pos) (++ pos))
+                  tb/key-arrow-down (and (> (dec (length sd)) pos) (++ pos))
                   tb/key-ctrl-p (and (pos? pos) (-- pos))
+                  tb/key-arrow-up (and (pos? pos) (-- pos))
                   tb/key-space (do
                                 (buffer/push-string s " ")
                                 (set sd (match-n-sort d s)))
+                  tb/key-tab (do
+                              (set s (buffer (get-in sd [pos 0])))
+                              (set sd (match-n-sort d s)))
                   tb/key-backspace2
-                  (do (buffer/popn s (cond
-                                       (> (last s) 0x7F) 2
-                                       (> (last s) 0xC0) 3
-                                       (> (last s) 0xE0) 4
-                                       1))
+                  (when (pos? (length s))
+                   (buffer/popn s
+                                (cond
+                                  (> (last s) 0xE0) 4
+                                  (> (last s) 0xC0) 3
+                                  (> (last s) 0x7F) 2
+                                  1))
                       (set sd (match-n-sort d s)))
                   tb/key-enter
                   (do
