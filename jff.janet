@@ -4,8 +4,13 @@
 (defn to-cells [message &opt col row style]
   (default col 0)
   (default row 0)
-  (def fg (if style tb/black tb/white))
-  (def bg (if style tb/green tb/black))
+  (def fg (case style
+           :inv tb/black
+           :soft tb/magenta
+           tb/white))
+  (def bg (cond
+           (= :inv style) tb/green
+           tb/black))
   (def msg (utf8/decode message))
 
   (for c 0 (length msg)
@@ -40,8 +45,8 @@
                         (< (length (first a)) (length (first b)))
                         (< (last b) (last a)))))))
 
-(defn main [_ &opt prompt prefix]
-  (default prompt "")
+(defn main [_ &opt prmt prefix]
+  (default prmt "")
   (default prefix "")
   (def d (prepare-input prefix))
   (assert d)
@@ -57,10 +62,10 @@
       (var s @"")
 
       (tb/clear)
-      (to-cells prompt 0 0)
+      (to-cells prmt 0 0)
       (for i 0 (length d)
-        (to-cells (get-in d [i 0]) 0 (+ i 2) (when (= pos i) :inv)))
-      (to-cells (string/format "%d/%d" (length d) (length d)) 0 1)
+        (to-cells (get-in d [i 0]) 0 (inc i) (when (= pos i) :inv)))
+      (to-cells (string/format "%d/%d" (length d) (length d)) 20 0)
       (tb/present)
 
       (var sd d)
@@ -98,9 +103,10 @@
 
 
         (tb/clear)
-        (to-cells (string prompt s) 0 0)
-        (to-cells (string/format "%d/%d" (length d) (length sd)) 0 1)
+        (to-cells (string/format "%s%s - %d/%d" prmt (string s) (length d) (length sd)) 0 0)
         (for i 0 (min (length sd) rows)
-          (to-cells (first (get sd i)) 0 (+ i 2) (when (= pos i) :inv)))
+          (let [[term score] (get sd i)]
+            (to-cells term 0 (inc i) (cond (= pos i) :inv
+                                           (= score 1) :soft))))
         (tb/present))))
   (print res))
