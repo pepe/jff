@@ -62,35 +62,42 @@
       (var s @"")
       (var sd d)
 
-      (tb/clear)
-      (to-cells (string/format "%d/%d %s%s" (length d) (length sd) prmt (string s)) 0 0)
-      (for i 0 (length d)
-        (to-cells (get-in d [i 0]) 0 (inc i) (when (= pos i) :inv)))
+      (defn show-prompt []
+        (tb/clear)
+        (to-cells (string/format "%d/%d %s%s" (length d) (length sd) prmt (string s)) 0 0)
+        (for i 0 (min (length sd) rows)
+          (let [[term score] (get sd i)]
+            (to-cells term 0 (inc i) (cond (= pos i) :inv
+                                           (= score 1) :soft))))
+        (tb/present))
 
-      (tb/present)
+      (show-prompt)
+
+      (defn inc-pos [] (and (> (dec (length sd)) pos) (++ pos)))
+      (defn dec-pos [] (and (pos? pos) (-- pos)))
 
       (while (tb/poll-event e)
         (let [c (tb/event-char e)
               k (tb/event-key e)]
           (if (zero? c)
             (case k
-                  tb/key-ctrl-n (and (> (dec (length sd)) pos) (++ pos))
-                  tb/key-arrow-down (and (> (dec (length sd)) pos) (++ pos))
-                  tb/key-ctrl-p (and (pos? pos) (-- pos))
-                  tb/key-arrow-up (and (pos? pos) (-- pos))
+                  tb/key-ctrl-n (inc-pos)
+                  tb/key-arrow-down (inc-pos)
+                  tb/key-ctrl-p (dec-pos)
+                  tb/key-arrow-up (dec-pos)
                   tb/key-space (do
-                                (buffer/push-string s " ")
-                                (set sd (match-n-sort d s)))
+                                 (buffer/push-string s " ")
+                                 (set sd (match-n-sort d s)))
                   tb/key-tab (do
-                              (set s (buffer (get-in sd [pos 0])))
-                              (set sd (match-n-sort d s)))
+                               (set s (buffer (get-in sd [pos 0])))
+                               (set sd (match-n-sort d s)))
                   tb/key-backspace2
-                  (when (pos? (length s))
+                  (when-let [ls (last s)]
                    (buffer/popn s
                                 (cond
-                                  (> (last s) 0xE0) 4
-                                  (> (last s) 0xC0) 3
-                                  (> (last s) 0x7F) 2
+                                  (> ls 0xE0) 4
+                                  (> ls 0xC0) 3
+                                  (> ls 0x7F) 2
                                   1))
                       (set sd (match-n-sort d s)))
                   tb/key-esc (break)
@@ -102,13 +109,5 @@
             (do
               (buffer/push-string s (utf8/encode [c]))
               (set sd (match-n-sort d s)))))
-
-
-        (tb/clear)
-        (to-cells (string/format "%d/%d - %s%s" (length d) (length sd) prmt (string s)) 0 0)
-        (for i 0 (min (length sd) rows)
-          (let [[term score] (get sd i)]
-            (to-cells term 0 (inc i) (cond (= pos i) :inv
-                                           (= score 1) :soft))))
-        (tb/present))))
+        (show-prompt))))
   (print res))
