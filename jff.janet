@@ -55,7 +55,7 @@
   (defer (tb/shutdown)
     (tb/init)
     (let [cols (tb/width)
-          rows (dec (tb/height))
+          rows (tb/height)
           e (tb/event)]
 
       (var pos 0)
