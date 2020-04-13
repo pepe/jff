@@ -81,10 +81,8 @@
               k (tb/event-key e)]
           (if (zero? c)
             (case k
-                  tb/key-ctrl-n (inc-pos)
-                  tb/key-arrow-down (inc-pos)
-                  tb/key-ctrl-p (dec-pos)
-                  tb/key-arrow-up (dec-pos)
+                  tb/key-ctrl-n (inc-pos) tb/key-arrow-down (inc-pos)
+                  tb/key-ctrl-p (dec-pos) tb/key-arrow-up (dec-pos)
                   tb/key-space (do
                                  (buffer/push-string s " ")
                                  (set sd (match-n-sort d s)))
@@ -100,8 +98,7 @@
                                   (> ls 0x7F) 2
                                   1))
                       (set sd (match-n-sort d s)))
-                  tb/key-esc (break)
-                  tb/key-ctrl-c (break)
+                  tb/key-esc (break) tb/key-ctrl-c (break)
                   tb/key-enter
                   (do
                     (set res (string prefix (or (get-in sd [pos 0]) s)))
