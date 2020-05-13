@@ -6,12 +6,12 @@
   (default row 0)
 
   (let [fg (case style
-           :inv tb/black
-           :soft tb/magenta
-           tb/white)
+             :inv tb/black
+             :soft tb/magenta
+             tb/white)
         bg (cond
-           (= :inv style) tb/green
-           tb/black)
+             (= :inv style) tb/green
+             tb/black)
         msg (utf8/decode message)]
     (for c 0 (length msg)
       (tb/cell (+ col c) row (msg c) fg bg))))
@@ -24,11 +24,11 @@
               '*
               ;(seq [i :in b
                      :let [c (string/from-bytes i)]]
-                ~(* (any (if-not ,c 1)) ,c)))
+                 ~(* (any (if-not ,c 1)) ,c)))
      :main '(+
-             (if :exact (constant 3))
-             (if :in (constant 2))
-             (if :fuzzy (constant 1)))}))
+              (if :exact (constant 3))
+              (if :in (constant 2))
+              (if :fuzzy (constant 1)))}))
 
 (defn prepare-input [prefix]
   (->> (:read stdin :all)
@@ -63,7 +63,7 @@
         (for i 0 (min (length sd) rows)
           (let [[term score] (get sd i)]
             (to-cells term 0 (inc i) (cond (= pos i) :inv
-                                           (= score 1) :soft))))
+                                       (= score 1) :soft))))
         (tb/present))
 
       (show-prompt)
@@ -88,7 +88,7 @@
                          (> ls 0xC0) 3
                          (> ls 0x7F) 2
                          1))
-           (set sd (match-n-sort choices s))))
+          (set sd (match-n-sort choices s))))
 
       (defn quit [] (os/exit 1))
 
@@ -97,13 +97,13 @@
               k (tb/event-key e)]
           (if (zero? c)
             (case k
-                  tb/key-ctrl-n (inc-pos) tb/key-ctrl-j (inc-pos) tb/key-arrow-down (inc-pos)
-                  tb/key-ctrl-p (dec-pos) tb/key-ctrl-k (dec-pos) tb/key-arrow-up (dec-pos)
-                  tb/key-space (add-space)
-                  tb/key-tab (complete)
-                  tb/key-backspace2 (erase-last)
-                  tb/key-esc (quit) tb/key-ctrl-c (quit)
-                  tb/key-enter (set res (or (get-in sd [pos 0]) s)))
+              tb/key-ctrl-n (inc-pos) tb/key-ctrl-j (inc-pos) tb/key-arrow-down (inc-pos)
+              tb/key-ctrl-p (dec-pos) tb/key-ctrl-k (dec-pos) tb/key-arrow-up (dec-pos)
+              tb/key-space (add-space)
+              tb/key-tab (complete)
+              tb/key-backspace2 (erase-last)
+              tb/key-esc (quit) tb/key-ctrl-c (quit)
+              tb/key-enter (set res (or (get-in sd [pos 0]) s)))
             (do
               (buffer/push-string s (utf8/encode [c]))
               (set sd (match-n-sort choices s)))))

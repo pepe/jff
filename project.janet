@@ -4,4 +4,4 @@
   :dependencies ["https://github.com/sepisoad/jtbox"
                  "https://github.com/crocket/janet-utf8.git"])
 
-(declare-source :source ["jff.janet"])
+(declare-executable :name "jff" :entry "jff.janet")
