@@ -42,15 +42,11 @@
   (as->
     (reduce
       (fn [a [i _]]
-        (if-let [p (peg/match cg i)]
-          (array/push a [i (reduce + 0 p)])
-          a))
-      @[]
-      d) r
-    (filter |(number? (last $)) r)
-    (sort r (fn [a b] (if (= (last a) (last b))
-                        (< (length (first a)) (length (first b)))
-                        (< (last b) (last a)))))))
+        (if-let [p (peg/match cg i)] (array/push a [i (reduce + 0 p)]) a))
+      (array/new (length d)) d) r
+    (sort r
+          (fn [[fa la] [fb lb]]
+            (if (= la lb) (< (length fa) (length fb)) (< lb la))))))
 
 (defn choose [choices prmt]
   (var res nil)
