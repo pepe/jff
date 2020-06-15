@@ -78,7 +78,9 @@
 
     (defn inc-pos [] (and (> (dec (length sd)) pos) (++ pos)))
     (defn dec-pos [] (and (pos? pos) (-- pos)))
-    (defn quit [] (os/exit 1))
+    (defn quit []
+      (set res false)
+      (tb/clear))
 
     (defn add-char [c]
       (buffer/push-string s (utf8/encode [c]))
@@ -119,4 +121,6 @@
 (defn main [_ &opt prmt prefix]
   (default prmt "")
   (default prefix "")
-  (print (string prefix (choose (prepare-input prefix) prmt))))
+  (if-let [c (choose (prepare-input prefix) prmt)]
+    (print (string prefix c))
+    (os/exit 1)))
