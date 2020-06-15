@@ -60,9 +60,9 @@
     (var pos 0)
     (var s @"")
     (var sd choices)
+
     (defn show-ui []
       (tb/clear)
-
       (to-cells (string/format "%d/%d %s%s" (length sd) (length choices) prmt
                                (string s))
                 0 0)
