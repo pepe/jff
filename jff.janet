@@ -43,7 +43,7 @@
   (as->
     (reduce
       (fn [a [i _]]
-        (if-let [p (peg/match cg i)] (array/push a [i (reduce + 0 p)]) a))
+        (if-let [p (:match cg i)] (array/push a [i (reduce + 0 p)]) a))
       (array/new (length d)) d) r
     (sort r
           (fn [[ia sa] [ib sb]]
@@ -78,9 +78,7 @@
 
     (defn inc-pos [] (and (> (dec (length sd)) pos) (++ pos)))
     (defn dec-pos [] (and (pos? pos) (-- pos)))
-    (defn quit []
-      (set res false)
-      (tb/clear))
+    (defn quit [] (set res false))
 
     (defn add-char [c]
       (buffer/push-string s (utf8/encode [c]))
@@ -115,7 +113,8 @@
           tb/key-esc (quit) tb/key-ctrl-c (quit)
           tb/key-enter (set res (or (get-in sd [pos 0]) s)))
         (add-char c))
-      (show-ui)))
+      (show-ui))
+    (tb/clear))
   res)
 
 (defn main [_ &opt prmt prefix]
