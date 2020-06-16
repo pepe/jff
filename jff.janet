@@ -29,21 +29,6 @@
             :let [c (string/from-bytes i)]]
         ~(* (any (if-not ,c (* (constant -1) 1))) ,c))]))
 
-(defn match-n-sort [d s]
-  (def cg (mg (string s)))
-  (as->
-    (reduce
-      (fn [a [i _]]
-        (cond
-          (or (string/has-prefix? s i) (string/has-suffix? s i)) (array/push a [i 100])
-          (string/find s i) (array/push a [i 50])
-          (if-let [p (:match cg i)] (array/push a [i (reduce + 0 p)]) a)))
-      (array/new (length d)) d) r
-    (array/trim r)
-    (sort r
-          (fn [[ia sa] [ib sb]]
-            (if (= sa sb) (< (length ia) (length ib)) (< sb sa))))))
-
 (defn choose [prmt choices]
   (var res nil)
   (defer (tb/shutdown)
@@ -57,14 +42,30 @@
     (var sd choices)
     (def lc (length choices))
 
+    (defn match-n-sort [d s]
+      (def cg (mg (string s)))
+      (def res
+        (reduce
+          (fn [a [i _]]
+            (def fs (string/find s i))
+            (cond
+              (or (zero? fs)
+                  (string/has-suffix? s i)) (array/push a [i 100])
+              fs (array/push a [i (- 50 fs)])
+              (if-let [p (and (< 1 (length s)) (:match cg i))] (array/push a [i (reduce + 0 p)]) a)))
+          (array/new (length d)) d))
+      (if (< (length res) lc)
+        (sort-by (fn [[i s]] (- (- s (/ (length i) 10)))) res)
+        res))
+
     (defn show-ui []
       (tb/clear)
-      (to-cells (string/format "%d/%d %s%s" (length sd) lc prmt
-                               (string s))
+      (to-cells (string/format "%d/%d %s%s_"
+                               (length sd) lc prmt (string s))
                 0 0)
       (for i 0 (min (length sd) rows)
         (def [term score] (get sd i))
-        (to-cells term 0 (inc i)
+        (to-cells (string score " - " term) 0 (inc i)
                   (cond
                     (= pos i) :inv
                     (neg? score) :soft)))
@@ -96,8 +97,9 @@
                        (> ls 0xC0) 3
                        (> ls 0x7F) 2
                        1))
-        (if (not (empty? s))
-          (set sd (match-n-sort choices s))
+        (cond
+          (= (length sd) lc) (break)
+          (not (empty? s)) (set sd (match-n-sort choices s))
           (set sd choices))))
 
     (while (and (nil? res) (tb/poll-event e))
