@@ -24,7 +24,7 @@
 
 (defn mg [b]
   (peg/compile
-    {:exact ~(some ,b)
+    {:exact b
      :in ~(* (some (if-not ,b (* (constant -1) 1))) :exact)
      :fuzzy (tuple
               '*
@@ -70,7 +70,7 @@
         (to-cells term 0 (inc i)
                   (cond
                     (= pos i) :inv
-                    (< score -30) :soft)))
+                    (< score 0) :soft)))
       (tb/present))
 
     (show-ui)
