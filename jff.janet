@@ -24,26 +24,22 @@
 
 (defn mg [b]
   (peg/compile
-    {:exact b
-     :in ~(* (some (if-not ,b (* (constant -1) 1))) :exact)
-     :fuzzy (tuple
-              '*
-              ;(seq [i :in b
-                     :let [c (string/from-bytes i)]]
-                 ~(* (any (if-not ,c (* (constant -1) 1))) ,c)))
-     :main '(*
-              (+
-                (if :exact (constant 1000))
-                (if :in (constant 100))
-                (if :fuzzy (constant 10))))}))
+    ['*
+     ;(seq [i :in b
+            :let [c (string/from-bytes i)]]
+        ~(* (any (if-not ,c (* (constant -1) 1))) ,c))]))
 
 (defn match-n-sort [d s]
   (def cg (mg (string s)))
   (as->
     (reduce
       (fn [a [i _]]
-        (if-let [p (:match cg i)] (array/push a [i (reduce + 0 p)]) a))
+        (cond
+          (or (string/has-prefix? s i) (string/has-suffix? s i)) (array/push a [i 100])
+          (string/find s i) (array/push a [i 50])
+          (if-let [p (:match cg i)] (array/push a [i (reduce + 0 p)]) a)))
       (array/new (length d)) d) r
+    (array/trim r)
     (sort r
           (fn [[ia sa] [ib sb]]
             (if (= sa sb) (< (length ia) (length ib)) (< sb sa))))))
@@ -59,10 +55,11 @@
     (var pos 0)
     (var s @"")
     (var sd choices)
+    (def lc (length choices))
 
     (defn show-ui []
       (tb/clear)
-      (to-cells (string/format "%d/%d %s%s" (length sd) (length choices) prmt
+      (to-cells (string/format "%d/%d %s%s" (length sd) lc prmt
                                (string s))
                 0 0)
       (for i 0 (min (length sd) rows)
@@ -70,7 +67,7 @@
         (to-cells term 0 (inc i)
                   (cond
                     (= pos i) :inv
-                    (< score 0) :soft)))
+                    (neg? score) :soft)))
       (tb/present))
 
     (show-ui)
