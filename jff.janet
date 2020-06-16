@@ -16,12 +16,11 @@
   (for c 0 (length msg)
     (tb/cell (+ col c) row (msg c) fg bg)))
 
-(defn prepare-input [prefix]
-  (->>
-    (:read stdin :all)
-    (string/split "\n")
-    (filter |(not (empty? $)))
-    (map |[(string/slice $ (length prefix) -1) 0])))
+(defn prepare-input [prefix input]
+  (->> input
+       (string/split "\n")
+       (filter |(not (empty? $)))
+       (map |[(string/slice $ (length prefix) -1) 0])))
 
 (defn mg [b]
   (peg/compile
@@ -49,7 +48,7 @@
           (fn [[ia sa] [ib sb]]
             (if (= sa sb) (< (length ia) (length ib)) (< sb sa))))))
 
-(defn choose [choices prmt]
+(defn choose [prmt choices]
   (var res nil)
   (defer (tb/shutdown)
     (tb/init)
@@ -71,22 +70,22 @@
         (to-cells term 0 (inc i)
                   (cond
                     (= pos i) :inv
-                    (< score 0) :soft)))
+                    (< score -30) :soft)))
       (tb/present))
 
     (show-ui)
 
     (defn inc-pos [] (and (> (dec (length sd)) pos) (++ pos)))
     (defn dec-pos [] (and (pos? pos) (-- pos)))
-    (defn quit [] (set res false))
+    (defn quit [] (tb/shutdown) (os/exit 1))
 
     (defn add-char [c]
       (buffer/push-string s (utf8/encode [c]))
-      (set sd (match-n-sort choices s)))
+      (set sd (match-n-sort sd s)))
 
     (defn complete []
       (set s (buffer (get-in sd [pos 0])))
-      (set sd (match-n-sort choices s)))
+      (set sd [[(string s) 0]]))
 
     (defn erase-last []
       (when-let [ls (last s)]
@@ -96,7 +95,9 @@
                        (> ls 0xC0) 3
                        (> ls 0x7F) 2
                        1))
-        (set sd (match-n-sort choices s))))
+        (if (not (empty? s))
+          (set sd (match-n-sort choices s))
+          (set sd choices))))
 
     (while (and (nil? res) (tb/poll-event e))
       (def c (tb/event-char e))
@@ -120,6 +121,8 @@
 (defn main [_ &opt prmt prefix]
   (default prmt "")
   (default prefix "")
-  (if-let [c (choose (prepare-input prefix) prmt)]
-    (print (string prefix c))
-    (os/exit 1)))
+  (->> (:read stdin :all)
+       (prepare-input prefix)
+       (choose prmt)
+       (string prefix)
+       print))
