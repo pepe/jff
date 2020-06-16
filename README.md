@@ -6,6 +6,17 @@ there is no remaining choice, which is great in combination with Tab key.
 
 Even with its simplicity, it has replace wofi/dmenu utility for me.
 
+## Implementation
+
+I am using very basic mathing and scoring. Best score if choice starts or end
+with the user input. Second best score if the user input is anywhere in the
+string. Than fuzzy search with every intermitent char not in user input lower
+score by -1. All scores starts as 0.
+
+Program is stable and responsive until around 1000 (depends on the machine)
+when the delay start to be perceivable. I guess it is Janet GC kicking in, as I
+am not optimalizing for memory consumption at all.
+
 ## Installation:
 
 You need latest development version of Janet programming language installed.
