@@ -75,19 +75,23 @@
 
     (show-ui)
 
+    (defn reset-pos [] (set pos 0))
     (defn inc-pos [] (and (> (dec (length sd)) pos) (++ pos)))
     (defn dec-pos [] (and (pos? pos) (-- pos)))
     (defn quit [] (tb/shutdown) (os/exit 1))
 
     (defn add-char [c]
+      (reset-pos)
       (buffer/push-string s (utf8/encode [c]))
       (set sd (match-n-sort sd s)))
 
     (defn complete []
+      (reset-pos)
       (set s (buffer (get-in sd [pos 0])))
       (set sd [[(string s) 0]]))
 
     (defn erase-last []
+      (reset-pos)
       (when-let [ls (last s)]
         (buffer/popn s
                      (cond
