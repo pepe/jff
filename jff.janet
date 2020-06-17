@@ -65,7 +65,7 @@
                 0 0)
       (for i 0 (min (length sd) rows)
         (def [term score] (get sd i))
-        (to-cells (string score " - " term) 0 (inc i)
+        (to-cells term 0 (inc i)
                   (cond
                     (= pos i) :inv
                     (neg? score) :soft)))
