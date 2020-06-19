@@ -60,7 +60,7 @@
 
     (defn show-ui []
       (tb/clear)
-      (to-cells (string/format "%d/%d %s%s_"
+      (to-cells (string/format "%d/%d %s%s\u2588"
                                (length sd) lc prmt (string s))
                 0 0)
       (for i 0 (min (length sd) rows)
@@ -74,8 +74,8 @@
     (show-ui)
 
     (defn reset-pos [] (set pos 0))
-    (defn inc-pos [] (and (> (dec (length sd)) pos) (++ pos)))
-    (defn dec-pos [] (and (pos? pos) (-- pos)))
+    (defn inc-pos [] (if (> (dec (length sd)) pos) (++ pos) (set pos 0)))
+    (defn dec-pos [] (if (pos? pos) (-- pos) (set pos (dec (length sd)))))
     (defn quit [] (tb/shutdown) (os/exit 1))
 
     (defn add-char [c]
@@ -85,8 +85,9 @@
 
     (defn complete []
       (reset-pos)
-      (set s (buffer (get-in sd [pos 0])))
-      (set sd [[(string s) 0]]))
+      (when (pos? (length sd))
+        (set s (buffer (get-in sd [pos 0])))
+        (set sd (match-n-sort sd s))))
 
     (defn erase-last []
       (reset-pos)
