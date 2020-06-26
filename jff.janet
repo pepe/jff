@@ -1,21 +1,6 @@
 (import termbox :as tb)
 (import utf8)
 
-(defn to-cells [message &opt col row style]
-  (default col 0)
-  (default row 0)
-
-  (def fg (case style
-            :inv tb/black
-            :soft tb/magenta
-            tb/white))
-  (def bg (cond
-            (= :inv style) tb/green
-            tb/black))
-  (def msg (utf8/decode message))
-  (for c 0 (length msg)
-    (tb/cell (+ col c) row (msg c) fg bg)))
-
 (defn prepare-input [prefix input]
   (->> input
        (string/split "\n")
@@ -57,6 +42,21 @@
       (if (< (length res) lc)
         (sort-by (fn [[i s]] (- (- s (/ (length i) 10)))) res)
         res))
+
+    (defn to-cells [message &opt col row style]
+      (default col 0)
+      (default row 0)
+
+      (def fg (case style
+                :inv tb/black
+                :soft tb/magenta
+                tb/white))
+      (def bg (cond
+                (= :inv style) tb/green
+                tb/black))
+      (def msg (utf8/decode message))
+      (for c 0 (min cols (length msg))
+        (tb/cell (+ col c) row (msg c) fg bg)))
 
     (defn show-ui []
       (tb/clear)
