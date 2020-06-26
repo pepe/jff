@@ -122,11 +122,13 @@
     (tb/clear))
   res)
 
-(defn main [_ &opt prmt prefix]
+(defn main [_ &opt prmt prefix code]
   (default prmt "")
   (default prefix "")
+  (def res-fn (if code (eval (parse code)) identity))
   (->> (:read stdin :all)
        (prepare-input prefix)
        (choose prmt)
        (string prefix)
+       (res-fn)
        print))
