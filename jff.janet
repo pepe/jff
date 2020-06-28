@@ -20,7 +20,10 @@
               :help "PEG grammar to match with the result."}
    "code" {:kind :option
            :short "c"
-           :help "Janet function definition to run. The selected choice or the PEG match if grammar provided. Default is print"}])
+           :help "Janet function definition to run. The selected choice or the PEG match if grammar provided. Default is print"}
+   "program" {:kind :option
+              :short "p"
+              :help "File with code which must have three function preparer, matcher and transformer."}])
 
 (defn prepare-input [prefix input]
   (->> input
@@ -149,13 +152,20 @@
            "prompt" prmt
            "prefix" prefix
            "grammar" grammar
-           "code" code} parsed]
-      (def matcher (if grammar |(peg/match (parse grammar) $) identity))
-      (def transformer (if code (eval (parse code)) print))
+           "code" code
+           "program" program} parsed]
+      (var matcher identity)
+      (var transformer print)
+      (when grammar (set matcher |(peg/match (parse grammar) $)))
+      (when code (set transformer (eval (parse code))))
+      (when-let [program (and program (dofile program))]
+        (set matcher |(peg/match (get-in program ['grammar :value]) $))
+        (set transformer (get-in program ['transform :value])))
+
       (def file (if file (file/open file :r) stdin))
       (->> (:read file :all)
            (prepare-input prefix)
            (choose prmt)
            (string prefix)
-           matcher
-           transformer))))
+           (matcher)
+           (transformer)))))
