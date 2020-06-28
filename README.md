@@ -1,4 +1,5 @@
-# Janet Fuzzy Finder
+# Janet Fuzzy Finder - get through some stdout almost omnisciently and friendly
+
 
 My exercise in command-line programming. Think of it as fzf, but without all the
 fancy stuff, but with one crucial addition: it prints what user has typed if
@@ -26,15 +27,41 @@ Then you can install jff with the jpm package manager:
 
 ## Usage:
 
-`ls Code/**/* | jff` will show the choices, and you can start fuzzy finding.
+Command line arguments:
+
+```
+ Optional:
+ -c, --code VALUE                            Janet function definition to run. The selected choice or the PEG match if grammar provided. Default is
+print.
+ -f, --file VALUE                            Read a file rather than stdin for choices.
+ -g, --grammar VALUE                         PEG grammar to match with the result.
+ -h, --help                                  Show this help message.
+ -x, --prefix VALUE=                         Prefix to remove when listing choices. Default ''.
+ -r, --prompt VALUE=>                        Change the prompt. Default: '> '.
+```
+
+`jff < $choides` will show the choices, and you can start fuzzy finding.
 List of choices starts to narrow on every char. There are some special, yet
 standard key combos for navigation:
 
 - Down/Ctrl-n/Ctrl-j moves the selection down one item
 - Up/Ctrl-p/Ctrl-k moves the selection up one item
-- Tab replaces typed chars with the text of the selection
+- Tab replaces typed chars with the text of the selection. To narrow the search.
 - Ctrl-c/Escape exits with error without printing anything
-- Enter confirms the current selection and prints it to stdout
+- Enter confirms the current selection and matches/transforms/prints it to stdout
 
+## Examples
 
+Run the function on the result:
+
+```
+lr -1 | janet jff.janet -c '|(print (string/ascii-upper $))'
+```
+
+Match the result with the grammar and then runs the function:
+
+```
+lr -1 | janet jff.janet -g '(<- (to "."))'
+                        -c '|(print (string/ascii-upper (first $)))'
+```
 

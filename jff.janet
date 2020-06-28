@@ -1,5 +1,26 @@
 (import termbox :as tb)
 (import utf8)
+(import argparse :prefix "")
+
+(def argparse-params
+  ["Janet Fuzzy Finder - get through some stdout almost omnisciently and friendly"
+   "file" {:kind :option
+           :short "f"
+           :help "Read a file rather than stdin for choices."}
+   "prompt" {:kind :option
+             :short "r"
+             :help "Change the prompt. Default: '> '."
+             :default "> "}
+   "prefix" {:kind :option
+             :short "x"
+             :help "Prefix to remove when listing choices. Default ''."
+             :default ""}
+   "grammar" {:kind :option
+              :short "g"
+              :help "PEG grammar to match with the result."}
+   "code" {:kind :option
+           :short "c"
+           :help "Janet function definition to run. The selected choice or the PEG match if grammar provided. Default is print"}])
 
 (defn prepare-input [prefix input]
   (->> input
@@ -122,13 +143,19 @@
     (tb/clear))
   res)
 
-(defn main [_ &opt prmt prefix code]
-  (default prmt "")
-  (default prefix "")
-  (def res-fn (if code (eval (parse code)) identity))
-  (->> (:read stdin :all)
-       (prepare-input prefix)
-       (choose prmt)
-       (string prefix)
-       (res-fn)
-       print))
+(defn main [_ &]
+  (when-let [parsed (argparse ;argparse-params)]
+    (let [{"file" file
+           "prompt" prmt
+           "prefix" prefix
+           "grammar" grammar
+           "code" code} parsed]
+      (def matcher (if grammar |(peg/match (parse grammar) $) identity))
+      (def transformer (if code (eval (parse code)) print))
+      (def file (if file (file/open file :r) stdin))
+      (->> (:read file :all)
+           (prepare-input prefix)
+           (choose prmt)
+           (string prefix)
+           matcher
+           transformer))))
