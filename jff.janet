@@ -3,7 +3,7 @@
 (import argparse :prefix "")
 
 (def argparse-params
-  ["Janet Fuzzy Finder - get through some stdout almost omnisciently and friendly"
+  ["Janet Fuzzy Finder - get through some stdout almost omnisciently and friendly."
    "file" {:kind :option
            :short "f"
            :help "Read a file rather than stdin for choices."}
@@ -11,25 +11,18 @@
              :short "r"
              :help "Change the prompt. Default: '> '."
              :default "> "}
-   "prefix" {:kind :option
-             :short "x"
-             :help "Prefix to remove when listing choices. Default ''."
-             :default ""}
+   "prepare" {:kind :option
+              :short "e"
+              :help "Janet function defition to transform each line with. Default identity."}
    "grammar" {:kind :option
               :short "g"
-              :help "PEG grammar to match with the result."}
+              :help "PEG grammar to match with the result. Default nil which means  no matching."}
    "code" {:kind :option
            :short "c"
-           :help "Janet function definition to run. The selected choice or the PEG match if grammar provided. Default is print"}
+           :help "Janet function definition to transform result with. The selected choice or the PEG match if grammar provided. Default is print"}
    "program" {:kind :option
               :short "p"
               :help "File with code which must have three function preparer, matcher and transformer."}])
-
-(defn prepare-input [prefix input]
-  (->> input
-       (string/split "\n")
-       (filter |(not (empty? $)))
-       (map |[(string/slice $ (length prefix) -1) 0])))
 
 (defn mg [b]
   (peg/compile
@@ -150,22 +143,27 @@
   (when-let [parsed (argparse ;argparse-params)]
     (let [{"file" file
            "prompt" prmt
-           "prefix" prefix
+           "prepare" prepare
            "grammar" grammar
            "code" code
            "program" program} parsed]
+
+      (var preparer identity)
       (var matcher identity)
       (var transformer print)
+
       (when grammar (set matcher |(peg/match (parse grammar) $)))
       (when code (set transformer (eval (parse code))))
+      (when prepare (set preparer (eval (parse prepare))))
+
       (when-let [program (and program (dofile program))]
+        (set preparer (get-in program ['prepare :value]))
         (set matcher |(peg/match (get-in program ['grammar :value]) $))
         (set transformer (get-in program ['transform :value])))
 
       (def file (if file (file/open file :r) stdin))
-      (->> (:read file :all)
-           (prepare-input prefix)
+      (->> (seq [l :iterate (:read file :line)] [(preparer (string/trim l)) 0])
+           (filter |(not (empty? $)))
            (choose prmt)
-           (string prefix)
            (matcher)
            (transformer)))))
