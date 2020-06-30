@@ -6,3 +6,5 @@
                  "https://github.com/janet-lang/argparse.git"])
 
 (declare-executable :name "jff" :entry "jff.janet" :install true)
+
+(declare-source :source ["jff/"])
