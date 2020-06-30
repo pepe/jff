@@ -157,9 +157,9 @@
       (when prepare (set preparer (eval (parse prepare))))
 
       (when-let [program (and program (dofile program))]
-        (set preparer (get-in program ['prepare :value]))
-        (set matcher |(peg/match (get-in program ['grammar :value]) $))
-        (set transformer (get-in program ['transform :value])))
+        (when-let [prepare-fn (get-in program ['prepare :value])] (set preparer prepare-fn))
+        (when-let [grammar-def (get-in program ['grammar :value])] (set matcher |(peg/match grammar-def $)))
+        (when-let [transform-fn (get-in program ['transform :value])] (set transformer transform-fn)))
 
       (def file (if file (file/open file :r) stdin))
       (->> (seq [l :iterate (:read file :line)] [(preparer (string/trim l)) 0])
