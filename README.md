@@ -1,5 +1,6 @@
 # Janet Fuzzy Finder - get through some stdout almost omnisciently and friendly
 
+*Alpha Quality SW ahead*
 
 My exercise in command-line programming. Think of it as fzf, but without all the
 fancy stuff, but with one crucial addition: it prints what user has typed if
@@ -31,12 +32,12 @@ Command line arguments:
 
 ```
  Optional:
- -c, --code VALUE                            Janet function definition to run. The selected choice or the PEG match if grammar provided. Default is
-print.
+ -c, --code VALUE                            Janet function definition to transform result with. The selected choice or the PEG match if grammar provided. Default is print
  -f, --file VALUE                            Read a file rather than stdin for choices.
- -g, --grammar VALUE                         PEG grammar to match with the result.
+ -g, --grammar VALUE                         PEG grammar to match with the result. Default nil which means  no matching.
  -h, --help                                  Show this help message.
- -x, --prefix VALUE=                         Prefix to remove when listing choices. Default ''.
+ -e, --prepare VALUE                         Janet function defition to transform each line with. Default identity.
+ -p, --program VALUE                         File with code which must have three function preparer, matcher and transformer.
  -r, --prompt VALUE=>                        Change the prompt. Default: '> '.
 ```
 
@@ -50,7 +51,31 @@ standard key combos for navigation:
 - Ctrl-c/Escape exits with error without printing anything
 - Enter confirms the current selection and matches/transforms/prints it to stdout
 
-## Examples
+### Common
+
+Under the ns jff is common module with some functionality, that can be used in
+in other programs for jff. Well, for now it is only work with prefix. You can
+use them easily in your programs:
+
+```
+(import jff/common)
+
+(def prefix (string ((os/environ) "HOME") "/Code/"))
+
+(def prepare (common/remove-prefix prefix))
+
+(def transform (common/prepend-prefix prefix))
+```
+
+This script will strip the prefix from all choices and prepend it back to the
+result. If you save it in `code.janet` file, you can use it with:
+
+```
+lr -1 | jff -p code.janet
+```
+
+
+### Examples
 
 Run the function on the result:
 

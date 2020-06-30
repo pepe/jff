@@ -3,7 +3,8 @@
 (import argparse :prefix "")
 
 (def argparse-params
-  ["Janet Fuzzy Finder - get through some stdout almost omnisciently and friendly."
+  ["Janet Fuzzy Finder - get through some stdout almost omnisciently and friendly.
+   "
    "file" {:kind :option
            :short "f"
            :help "Read a file rather than stdin for choices."}
