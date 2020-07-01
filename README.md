@@ -68,12 +68,17 @@ use them easily in your programs:
 ```
 
 This script will strip the prefix from all choices and prepend it back to the
-result. If you save it in `code.janet` file, you can use it with:
+result. If you save it in `/home/user/bin/jff/code.janet` file, you can use it with:
 
 ```
-lr -1 | jff -p code.janet
+#!/bin/sh
+
+lr -1 -o A -A -t type=d  ~/Code/* ~/Code/*/* ~/Code/*/* ~/Code/*/*/* | \
+  jff -r 'sess:> ' -p ~/bin/jff/code.janet | \
+  xe swaymsg exec -- alacritty --working-directory {}
 ```
 
+to open the new terminal window on selected dir.
 
 ### Examples
 
