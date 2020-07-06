@@ -33,6 +33,7 @@
         ~(* (any (if-not ,c (* (constant -1) 1))) ,c))]))
 
 (defn choose [prmt choices]
+  (def choices (map |[$ 0] choices))
   (var res nil)
   (defer (tb/shutdown)
     (tb/init)
@@ -163,7 +164,7 @@
         (when-let [transform-fn (get-in program ['transform :value])] (set transformer transform-fn)))
 
       (def file (if file (file/open file :r) stdin))
-      (->> (seq [l :iterate (:read file :line)] [(preparer (string/trim l)) 0])
+      (->> (seq [l :iterate (:read file :line)] (preparer (string/trim l)))
            (filter |(not (empty? $)))
            (choose prmt)
            (matcher)
